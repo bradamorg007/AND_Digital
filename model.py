@@ -1,5 +1,4 @@
 from multi_channel_cnn.preprocessing import DataOrganiser
-from pickle import load
 import numpy as np
 from numpy import array
 from keras.preprocessing.text import Tokenizer
@@ -8,27 +7,23 @@ from keras.models import Model
 from keras.layers import Input
 from keras.layers import Dense
 from keras.models import load_model
-from keras.layers import SeparableConvolution1D
 from keras.layers import Dropout
 from keras.layers import Embedding
-from keras.layers import BatchNormalization
-from keras import callbacks
+
 from keras.optimizers import rmsprop
 import math
 
 from keras.layers.convolutional import Conv1D
-from keras.layers.convolutional import MaxPooling1D
-from keras.layers import GlobalAveragePooling1D
 from keras.layers import GlobalMaxPool1D
 from keras.layers.merge import concatenate
 import os
 
-from keras.callbacks import EarlyStopping
 import matplotlib.pyplot as plt
 
-# word index is produced by the tokensizer
+# Build the embedding matrix: Use googles pre-trained vector representations
 def define_embedding_matrix(word_index):
 
+    # extract words and vectors from glove.txt
     embedding_dims = 100
     dir = "../glove.6B/"
     fileName = "glove.6B.100d.txt"
@@ -45,8 +40,7 @@ def define_embedding_matrix(word_index):
 
     print('Program has detected %s word vectors from the %s embedding file' % (len(embedding_index), fileName))
 
-    # define embedding matrix
-
+    # define embedding matrix and apply googles vectors to my datasets vocab
     embedding_matrix = np.zeros((len(word_index) + 1, embedding_dims))
     count = 0
     for word, i in word_index.items():
@@ -60,11 +54,12 @@ def define_embedding_matrix(word_index):
     return embedding_matrix, embedding_dims
 
 
-
+# Associate the unique class labels with unique one-hot encodings: e.g debt collection = [0,0,0,1,0,0]
 def bind_label_encodings(encodings, input):
     return array([encodings.encoded_label_map.get(item) for item in input])
 
 
+# Updates internal vocabulary based on a list of texts. This method creates the vocabulary index based on word frequency.
 def tokenize(word_length, num_words, input):
     # word length is the maximum number of words each review will contain
     # num_words the number of most commonly occuring words that will be considered e.g 10k most frequent words fr vocab
@@ -72,10 +67,10 @@ def tokenize(word_length, num_words, input):
     tokenizer = Tokenizer(num_words=num_words)
     tokenizer.fit_on_texts(input)
 
-    # turn to ints
+    # turn words into integers
     integer_mappings = tokenizer.texts_to_sequences(input)
 
-    # padding
+    # integer token sequences to the max length of words for each customer complaint document
     padded_sequences = pad_sequences(sequences=integer_mappings, maxlen=word_length,
                                      padding='post')
 
@@ -84,14 +79,14 @@ def tokenize(word_length, num_words, input):
     print('Number of most frequent words to be considered from vocab = %s' % tokenizer.num_words)
     return tokenizer, padded_sequences, len(tokenizer.word_index) + 1
 
-
+# Randomise data ordering to stop overfitting in the model
 def shuffle_data(x, y):
     indices = np.arange(x.shape[0])
     np.random.shuffle(indices)
 
     return x[indices], y[indices]
 
-
+# Plot the training and validation accuracy and loss
 def plot_results(history):
     acc = history.history['acc']
     val_acc = history.history['val_acc']
@@ -116,7 +111,7 @@ def plot_results(history):
 
     plt.show()
 
-
+# Define the model: Based on research paper Yoon Kim (2014) https://arxiv.org/abs/1408.5882
 def multichannel_cnn1_model(x, y, word_len, vocab_size, embedding_matrix, embedding_dims):
     # MODEL
     #
@@ -159,7 +154,7 @@ def multichannel_cnn1_model(x, y, word_len, vocab_size, embedding_matrix, embedd
         dropout = Dropout(rate=0.8)(merge)
 
         # Feed into dense layers for prediction
-        dense1 = Dense(150, activation='relu')(merge)
+        dense1 = Dense(75, activation='relu')(merge)
         dropout2 = Dropout(rate=0.2)(dense1)
         outputs = Dense(len(y[0]), activation='softmax')(dropout2)
 
@@ -174,11 +169,11 @@ def multichannel_cnn1_model(x, y, word_len, vocab_size, embedding_matrix, embedd
     print(model.summary())
 
 
-    history = model.fit(x=x, y=y, epochs=5, batch_size=200, validation_split=0.1, verbose=2)
+    history = model.fit(x=x, y=y, epochs=10, batch_size=200, validation_split=0.1, verbose=2)
                        # callbacks=[callbacks.TensorBoard(log_dir='../multi_channel_cnn/logs/', histogram_freq=1,
                                                        #  embeddings_freq=1, embeddings_data=x[:100])])
                         #callbacks=[EarlyStopping(monitor='val_loss', patience=4, min_delta=0.0001)])
-    model.save('models/model_complex_Best_V2.h5')
+    model.save('model_complex_Best_V2.h5')
     plot_results(history)
 
 
@@ -186,7 +181,6 @@ def create_cnn_channel(input, filters, kernel_size):
 
 
     conv3 = Conv1D(filters=filters, kernel_size=kernel_size, activation='relu')(input)
-    batchNorm = BatchNormalization()(conv3)
     dropout3 = Dropout(rate=0.25)(conv3)
     globalMaxPool = GlobalMaxPool1D()(dropout3)
 
@@ -231,7 +225,7 @@ def max_length(lines):
 
 if __name__ == "__main__":
     data = DataOrganiser()
-    data.load_data('cc_BIG1.1_dataset.do.pkl')
+    data.load_data('cc_BIG1.2_dataset.do.pkl')
 
     (x_train, y_train) = data.asarray(data.train)
 
@@ -241,7 +235,7 @@ if __name__ == "__main__":
     # Tokenize data, add to vocab and pad to max word length
     tokenizer, x_train, vocab_size = tokenize(word_length=avg_word_len, num_words=20000, input=x_train)
 
-   # embedding_matrix, embedding_dims = define_embedding_matrix(word_index=tokenizer.word_index)
+    embedding_matrix, embedding_dims = define_embedding_matrix(word_index=tokenizer.word_index)
 
     # assign one_hot encodings to y_train and y_test labels
     y_train = bind_label_encodings(data, y_train)
@@ -250,4 +244,4 @@ if __name__ == "__main__":
     x, y = shuffle_data(x_train, y_train)
 
     multichannel_cnn1_model(x=x, y=y, word_len=avg_word_len, vocab_size=vocab_size,
-                            embedding_matrix=[], embedding_dims=200)
+                            embedding_matrix=embedding_matrix, embedding_dims=embedding_dims)

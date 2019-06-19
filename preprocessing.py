@@ -12,12 +12,14 @@ import sys
 from pickle import dump
 from pickle import load
 
-
+# This class provides static methods for Cleaning text based data for NLP
 class DataCleaner():
 
     def __init__(self):
         pass
 
+    # Method Cleans High level aspects of the data set such as removing blank or NaN entry values
+    # Method extracts relevant columns from data set table. Selects valid/usable sample points
     @staticmethod
     def data_clean(path, removeCols, cut_percentage, randomise):
         print('============== Cleaning Text Data ======================')
@@ -87,7 +89,7 @@ class DataCleaner():
         print('\n============== DONE! ======================')
         return tokens
 
-    # note on list comprehension to remember
+    # displays processing progress
     @staticmethod
     def progressBar(value, endvalue, bar_length=20):
         percent = float(value) / endvalue
@@ -97,6 +99,7 @@ class DataCleaner():
         sys.stdout.write("\rPercent: [{0}] {1}%".format(arrow + spaces, int(round(percent * 100))))
         sys.stdout.flush()
 
+    #Cleans Individual text data of sample points
     @staticmethod
     def token_clean(token_pair):
         if len(token_pair) == 2:
@@ -272,6 +275,7 @@ class DataOrganiser():
             dump(self, open(os.path.join(path, filename), 'wb'))
             print('DataOrganiser Saved Itself: %s ' % filename)
 
+    # Min and maximum occurring label. e.g label A has 90 sample points and label B has 30
     def max_label_freq(self):
 
         max = 0
@@ -296,6 +300,7 @@ class DataOrganiser():
 
         return min
 
+    # Min and max word length for customer complaint document
     def max_word_length(self):
 
         max = 0
@@ -321,6 +326,8 @@ class DataOrganiser():
 
         return min
 
+    # Creates a dictionary storing each class label as a unique key. The values of these keys are the associated
+    # text documents that represents the customers complaints
     def organise(self, simplify):
         # need to determine unique occurrences of label words and tally the occurrences and the indices where they occured
         # to do this I will use a dict within a dict for fast lookup and insert times
@@ -359,6 +366,10 @@ class DataOrganiser():
         else:
             self.label_dict = table
 
+
+    # To reduce model overfitting reduce the data to equal split of class labels. Reduce to the min threshold of samples
+    # required. e.g Class A, samples = 1000  classB, samples = 500. Reduce will crop Class A & B to 500 samples each
+    # updates all other dictionaries that map relevant sample locations and
     def reduce(self, min_samples):
 
         # Crop samples to a min number of samples, all sample pools will be cut to this size
@@ -424,6 +435,9 @@ class DataOrganiser():
         if self.label_map != None:
             self.label_map = reduced_label_map
 
+
+    # Allows for one to manually split dataset into training, test and validation proportions either by simply via
+    # random selection or by selecting equal class label sample amounts relative to train, test,validation split percentages
     def train_val_split(self, train_split, val_split, test_split, pick_type='random'):
 
         if train_split + val_split + test_split == 1:
@@ -475,6 +489,8 @@ class DataOrganiser():
         else:
             raise ValueError('Error: split must be a 3D vector with percentage values that sum to 1')
 
+
+    # Helper method that checks that there is indeed and equal distribution of class labels in the data set
     def valid(self, input):
 
         table = DataOrganiser.count_unquie(input)
@@ -493,6 +509,8 @@ class DataOrganiser():
 
         return True
 
+
+    # transforms word/text class labels into one hot encoding vectors for softmax prediction layer in model
     def encode_labels(self):
 
         labels = list(self.label_dict.keys())
@@ -507,6 +525,8 @@ class DataOrganiser():
         for key in keys:
             print('key: %s  sample size: %s' % (key, (self.label_dict.get(key)).get('freq')))
 
+
+    # Uses hash mapping via dictonary lookups to quickly tally the samples to their relevent labels
     @staticmethod
     def count_unquie(input):
         table = {}
@@ -528,6 +548,7 @@ class DataOrganiser():
 
         return table
 
+    # converts data to numpy arrays as they are much easier to handle and index with
     @staticmethod
     def asarray(input):
 
@@ -541,18 +562,19 @@ class DataOrganiser():
         return np.array(text), np.array(labels)
 
 
-
+# Main statement that runs the cleaning and organising process. Please not that data cleaning can on take sometime
+# depending on your computer specs
 if __name__ == "__main__":
 
-    # path ='../multi_channel_cnn/unclean_data/Consumer_Complaints_BIG1.csv'
-    # remove_cols=[1, 5]
-    # cut_percentage= 1
-    # randomise='from_start'
-    # save_name='cc_BIG1_dataset'
-    # simplify=True
-    #
-    # data = DataCleaner.data_clean(path=path, removeCols=remove_cols, cut_percentage=cut_percentage, randomise=randomise)
-    # DataCleaner.save_data(data=data, filename=save_name)
+    path ='../multi_channel_cnn/unclean_data/Consumer_Complaints_BIG1.csv'
+    remove_cols=[1, 5]
+    cut_percentage= 1
+    randomise='from_start'
+    save_name='cc_BIG1_dataset'
+    simplify=True
+
+    data = DataCleaner.data_clean(path=path, removeCols=remove_cols, cut_percentage=cut_percentage, randomise=randomise)
+    DataCleaner.save_data(data=data, filename=save_name)
 
     data_orger = DataOrganiser()
     data_orger.load_data(filename='cc_BIG1_dataset.dc.pkl')
