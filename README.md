@@ -3,7 +3,12 @@ Multi Channel 1D Convolutional Neural Network for Text Classification
 
 # Use Case
 
-Text classification can be used to automate customer support 
+Text classification can be used to automate customer support in many areas, such as call routing, feedback and complaint catogorisation and sentiment analysis of customer reviews. The code outlined here demonstrates how machine learning models can be affectively applied to these areas via multichanneled 1D convolutional neural network. The data set used for this demonstaration is comprised of 126352 customer complaints to an annonymous banking company, where the complaints have been labled to their associated catogories, such as mortgages, debt collection etc. 
+Please note that the data set and embeddings are too large to host GITHUB, so I have only included the python files for the model and pre-processing classes.
+Please find the data set at this URL https://www.kaggle.com/kharaldsson/consumter-complaints
+Please find embeddings at https://nlp.stanford.edu/projects/glove
+
+The code will not run without the above. 
 
 # Define Model
 A standard model for document classification is to use an Embedding layer as input, followed by a one-dimensional convolutional neural network, pooling layer, and then a prediction output layer.
