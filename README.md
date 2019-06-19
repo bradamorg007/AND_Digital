@@ -3,12 +3,12 @@ Multi Channel 1D Convolutional Neural Network for Text Classification
 
 # Use Case
 
-Text classification can be used to automate customer support in many areas, such as call routing, feedback and complaint catogorisation and sentiment analysis of customer reviews. The code outlined here demonstrates how machine learning models can be affectively applied to these areas via multichanneled 1D convolutional neural network. The data set used for this demonstaration is comprised of 126352 customer complaints to an annonymous banking company, where the complaints have been labled to their associated catogories, such as mortgages, debt collection etc. 
+Text classification can be used to automate customer support in many areas, such as call routing, feedback and complaint catogorisation and sentiment analysis of customer reviews. The code outlined here demonstrates how machine learning models can be affectively applied to these areas via multichanneled 1D convolutional neural network. The data set used for this demonstaration is comprised of 126352 customer complaints to an annonymous banking company, where the complaints have been labled to their associated catogories, such as mortgages, debt collection etc. We can leverage machine learning to predict which topic or department the complaint should be routed towards. The same model and approuch can be applied to golden shoe to aid with customer support workers with feedback and complaint/request analysis.
 Please note that the data set and embeddings are too large to host GITHUB, so I have only included the python files for the model and pre-processing classes.
 Please find the data set at this URL https://www.kaggle.com/kharaldsson/consumter-complaints
 Please find embeddings at https://nlp.stanford.edu/projects/glove
 
-The code will not run without the above. 
+The code will not run without the above. Thanks for reading
 
 # Define Model
 A standard model for document classification is to use an Embedding layer as input, followed by a one-dimensional convolutional neural network, pooling layer, and then a prediction output layer.
@@ -35,7 +35,7 @@ We will define a model with three input channels for processing 4-grams, 6-grams
 
 Input layer that defines the length of input sequences.
 Embedding layer set to the size of the vocabulary and 100-dimensional real-valued representations.
-One-dimensional convolutional layer with 32 filters and a kernel size set to the number of words to read at once.
+One-dimensional convolutional layer with 50 filters and a kernel size set to the number of words to read at once known as N-grams.
 Max Pooling layer to consolidate the output from the convolutional layer.
 Flatten layer to reduce the three-dimensional output to two dimensional for concatenation.
 The output from the three channels are concatenated into a single vector and process by a Dense layer and an output layer.
